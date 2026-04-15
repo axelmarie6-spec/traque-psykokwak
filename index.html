@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Traque du Psykokwak</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gb-green: #9bbc0f;
+    --gb-dark: #306230;
+    --gb-darker: #0f380f;
+    --gb-light: #e0f0a0;
+    --gb-cream: #f5f0d0;  
+    --gb-gray: #8c8c8c;
+    --gb-screen: #c4d49a;
+    --error: #c0392b;
+    --success: #27ae60;
+  }
+
+  body {
+    font-family: 'Press Start 2P', monospace;
+    background-color: var(--gb-cream);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(155,188,15,0.08) 31px, rgba(155,188,15,0.08) 32px),
+      repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(155,188,15,0.08) 31px, rgba(155,188,15,0.08) 32px);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 40px 0;
+    color: var(--gb-darker);
+  }
+
+  #timer-bar {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background: var(--gb-darker);
+    color: var(--gb-green);
+    text-align: center;
+    padding: 10px 0;
+    font-size: 20px;
+    letter-spacing: 3px;
+    z-index: 100;
+    border-bottom: 4px solid var(--gb-dark);
+    display: none;
+  }
+
+  #timer-bar.active { display: block; }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 480px;
+    padding: 24px 20px;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .screen.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .gb-frame {
+    background: var(--gb-screen);
+    border: 4px solid var(--gb-darker);
+    border-radius: 8px;
+    padding: 20px 16px;
+    width: 100%;
+    box-shadow: 4px 4px 0 var(--gb-dark);
+    margin-bottom: 20px;
+  }
+
+  .step-badge {
+    background: var(--gb-darker);
+    color: var(--gb-green);
+    font-size: 9px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+    display: inline-block;
+    letter-spacing: 1px;
+  }
+
+  .riddle-text {
+    font-size: 11px;
+    line-height: 1.9;
+    color: var(--gb-darker);
+    min-height: 60px;
+  }
+
+  .psyko-img {
+    width: 110px;
+    height: 110px;
+    image-rendering: pixelated;
+    margin: 10px auto 16px;
+    display: block;
+  }
+
+  .title-main {
+    font-size: 22px;
+    color: var(--gb-darker);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 8px;
+    text-shadow: 2px 2px 0 var(--gb-dark);
+  }
+
+  .title-sub {
+    font-size: 10px;
+    color: var(--gb-dark);
+    text-align: center;
+    margin-bottom: 24px;
+    line-height: 1.8;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 14px 12px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    background: var(--gb-cream);
+    border: 3px solid var(--gb-darker);
+    border-radius: 4px;
+    color: var(--gb-darker);
+    text-align: center;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    outline: none;
+    box-shadow: 3px 3px 0 var(--gb-dark);
+  }
+
+  input[type="text"]:focus {
+    background: #fff;
+    border-color: var(--gb-dark);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 16px 12px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    background: var(--gb-darker);
+    color: var(--gb-light);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    line-height: 1.6;
+    box-shadow: 0 4px 0 var(--gb-dark);
+    transition: transform 0.08s, box-shadow 0.08s;
+    margin-bottom: 10px;
+    touch-action: manipulation;
+  }
+
+  .btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 var(--gb-dark);
+  }
+
+  .btn.btn-start {
+    background: var(--gb-dark);
+    font-size: 13px;
+    padding: 20px 12px;
+  }
+
+  .btn.btn-arrive {
+    background: #2980b9;
+    font-size: 12px;
+    padding: 20px 12px;
+  }
+
+  .btn.btn-validate {
+    background: #1a5c2e;
+    font-size: 10px;
+  }
+
+  .btn.btn-validate.imran  { background: #1a4a7a; }
+  .btn.btn-validate.ismael { background: #6b2278; }
+  .btn.btn-validate.zackari { background: #7a2a00; }
+
+  #error-msg {
+    font-size: 9px;
+    color: var(--error);
+    text-align: center;
+    line-height: 1.9;
+    margin-bottom: 10px;
+    min-height: 20px;
+    display: none;
+  }
+
+  #error-msg.visible { display: block; }
+
+  .psyko-mock {
+    font-size: 28px;
+    text-align: center;
+    margin: 8px 0;
+  }
+
+  .victory-time {
+    font-size: 32px;
+    color: var(--gb-dark);
+    text-align: center;
+    margin: 16px 0;
+    text-shadow: 2px 2px 0 var(--gb-darker);
+    letter-spacing: 4px;
+  }
+
+  .victory-text {
+    font-size: 10px;
+    line-height: 2;
+    text-align: center;
+    color: var(--gb-darker);
+  }
+
+  .confetti-bar {
+    font-size: 20px;
+    text-align: center;
+    margin: 12px 0;
+    letter-spacing: 6px;
+  }
+
+  .pixel-border {
+    border: 4px solid var(--gb-darker);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 var(--gb-dark), -1px -1px 0 #fff inset;
+  }
+
+  #cursor {
+    display: inline-block;
+    width: 10px;
+    height: 14px;
+    background: var(--gb-darker);
+    margin-left: 2px;
+    animation: blink 0.7s steps(1) infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .progress-dots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--gb-gray);
+    border: 2px solid var(--gb-dark);
+  }
+
+  .dot.done { background: var(--gb-dark); }
+  .dot.current { background: var(--gb-green); }
+
+  .click-counter {
+    font-size: 8px;
+    color: var(--gb-dark);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  /* Nouveaux conteneurs pour gérer Transit vs Action */
+  #transit-container, #action-container {
+    width: 100%;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+  }
+  #transit-container.active, #action-container.active {
+    display: flex;
+  }
+</style>
+</head>
+<body>
+
+<div id="timer-bar">⏱ <span id="timer-display">00:00</span></div>
+
+<div class="screen active" id="screen-home">
+  <div style="height:30px"></div>
+  <div class="title-main">TRAQUE DU<br>PSYKOKWAK</div>
+  <div class="title-sub">Une aventure pour<br>Imran, Ismaël & Zackari</div>
+ <img class="psyko-img" src="psykokwak.png" alt="Psykokwak">
+    Le Psykokwak a volé le sac !<br>Partez à sa poursuite à travers<br>toute la ville de Saint-Lô.<br><br>
+    <span style="font-size:9px;color:var(--gb-dark)">8 énigmes vous attendent...</span>
+  </div>
+  <button class="btn btn-start" onclick="startGame()">▶ DÉMARRER L'AVENTURE</button>
+</div>
+
+<div class="screen" id="screen-riddle">
+  <div class="progress-dots" id="progress-dots"></div>
+  
+  <div class="gb-frame pixel-border" style="width:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="step-badge" id="step-badge">ÉTAPE 1/8</div>
+      <img style="width:44px;height:44px;image-rendering:pixelated;" src="psykokwak.png" alt="Psyko">
+    </div>
+    <div class="riddle-text" id="riddle-text"><span id="cursor"></span></div>
+  </div>
+
+  <div id="transit-container" class="active">
+    <button class="btn btn-arrive" onclick="arriveAtLocation()">📍 ON EST SUR PLACE !</button>
+  </div>
+
+  <div id="action-container">
+    <input type="text" id="password-input" placeholder="MOT DE PASSE..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="handleEnter(event)">
+    <div id="error-msg">
+      <div class="psyko-mock">🦆</div>
+      <span id="error-text"></span>
+    </div>
+    <div class="click-counter" id="click-counter"></div>
+    <button class="btn btn-validate" id="validate-btn" onclick="handleValidate()">✓ VALIDER</button>
+  </div>
+</div>
+
+<div class="screen" id="screen-victory">
+  <div style="height:16px"></div>
+  <div class="confetti-bar">🎉 ⭐ 🏆 ⭐ 🎉</div>
+  <div class="title-main" style="font-size:16px;margin-bottom:16px;">VICTOIRE !</div>
+  <img class="psyko-img" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcHJvY2dyMHFhOGYxMnk3ZGxodWxsZGV2NWZwbmZzY2MyZGpjcnFwcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/RHOwD4RFNPBGS/giphy.gif" alt="Psykokwak capturé" onerror="this.src='https://placehold.co/110x110/27ae60/0f380f?text=WIN&font=monospace'">
+  <div class="gb-frame pixel-border" style="text-align:center;">
+    <div class="victory-text">Psykokwaaak...<br>Vous m'avez eu !<br><br>Essayer de devenir une statue<br>magique m'a épuisé.<br><br>Vous êtes de vrais<br>détectives d'élite !</div>
+    <div style="margin:16px 0;font-size:9px;color:var(--gb-dark)">TEMPS TOTAL :</div>
+    <div class="victory-time" id="final-time">--:--</div>
+    <div class="victory-text" style="margin-top:12px;">Prenez ce trésor !<br>Je retourne dans<br>ma Pokéball.<br><br>🏆 Félicitations à 🏆<br><br>IMRAN<br>ISMAËL<br>ZACKARI !</div>
+  </div>
+</div>
+
+<script>
+// Structure modifiée : transit = En voiture | action = Fouille sur place
+const STEPS = [
+  {
+    transit: "C'est parti depuis l'Impasse des Berberies !",
+    action: "ALERTE GÉNÉRALE ! Le Psykokwak a laissé ce message : « J'adore taper dans des balles jaunes poilues... Assemblez la lettre au milieu du mot AMI, la 1ère de Tennis et la 1ère de Champion. » Tapez la réponse pour connaître la destination !",
+    answer: "MTC"
+  },
+  {
+    transit: "Super Imran ! En voiture, direction le MTC !",
+    action: "Le radar s'affole ! Cherchez bien sur les grilles de l'entrée, il a dû laisser une enveloppe. Déchiffrez-la pour savoir où il a fui.",
+    answer: "TC"
+  },
+  {
+    transit: "Il est passé à l'ennemi ! En route pour le TC !",
+    action: "Inspectez les abords des terrains ou les poteaux. Trouvez l'enveloppe et résolvez l'énigme de ce drôle de pokemon !",
+    answer: "INTERPAROISSIAL"
+  },
+  {
+    transit: "Retour à l'école ! Direction l'Interparoissial !",
+    action: "Regardez bien autour du portail ou du grand panneau de l'école. Trouvez l'enveloppe et tapez le mot de passe.",
+    answer: "ARAIGNEE"
+  },
+  {
+    transit: "Il veut grimper ! Direction la piscine et son parc.",
+    action: "Il a dû accrocher son message au sommet de la toile... ou peut-être qu'il est tombé sous vos pieds, dans les copeaux de bois ! Fouillez bien.",
+    answer: "PRISON"
+  },
+  {
+    transit: "Au cachot ! On y va, direction la place de la Prison.",
+    action: "Cherchez minutieusement dans les fissures entre ces vieux blocs de pierre. Décodez son message secret.",
+    answer: "RACONTARS"
+  },
+  {
+    transit: "Il va dévaliser les mangas ! Foncez aux Racontars.",
+    action: "Soyez discrets, regardez vite sur le rebord de la vitrine ou sous la porte avant qu'il ne ressorte.",
+    answer: "HARAS"
+  },
+  {
+    transit: "Des chevaux ! C'est logique, le Haras n'est pas loin.",
+    action: "Cherchez près de l'entrée principale, sur une barrière ou un poteau. C'est la dernière ligne droite !",
+    answer: "LICORNE"
+  }
+];
+
+const ERROR_MSGS = [
+  "Kwak kwak kwak ! Même pas proche !",
+  "Psykokwak rigole : Raté, essaie encore !",
+  "Ha ha ha ! C'est faux ! Je suis trop fort !",
+  "Kwaaak ! Tu rêves ou quoi ?",
+  "Non non non ! Retourne chercher !"
+];
+
+const VALIDATE_LABELS = [
+  "✓ VALIDER",
+  "👦 IMRAN, VALIDE !",
+  "👦 ISMAËL, À TOI !",
+  "👦 ZACKARI, CONFIRME !"
+];
+
+let currentStep = 0;
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+let typewriterTimeout = null;
+let clickCount = 0;
+
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new AudioCtx(); } catch(e) {}
+  }
+  return audioCtx;
+}
+
+function playBeep(freq, dur, vol) {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.frequency.value = freq;
+    o.type = 'square';
+    g.gain.setValueAtTime(vol || 0.07, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+
+function playError() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    [220, 180, 150].forEach((f, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'sawtooth';
+      g.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.08);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.15);
+      o.start(ctx.currentTime + i * 0.08);
+      o.stop(ctx.currentTime + i * 0.08 + 0.15);
+    });
+  } catch(e) {}
+}
+
+function playSuccess() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((f, i) => {
+    try {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'square';
+      g.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.1);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.18);
+      o.start(ctx.currentTime + i * 0.1);
+      o.stop(ctx.currentTime + i * 0.1 + 0.18);
+    } catch(e) {}
+  });
+}
+
+function playVictory() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const melody = [523,523,523,392,523,659,392];
+  melody.forEach((f, i) => {
+    try {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'square';
+      g.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.15);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.2);
+      o.start(ctx.currentTime + i * 0.15);
+      o.stop(ctx.currentTime + i * 0.15 + 0.2);
+    } catch(e) {}
+  });
+}
+
+function startTimer() {
+  timerSeconds = 0;
+  timerRunning = true;
+  document.getElementById('timer-bar').classList.add('active');
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    document.getElementById('timer-display').textContent = formatTime(timerSeconds);
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+}
+
+function formatTime(s) {
+  const m = String(Math.floor(s / 60)).padStart(2, '0');
+  const sec = String(s % 60).padStart(2, '0');
+  return m + ':' + sec;
+}
+
+function normalize(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function buildProgressDots() {
+  const container = document.getElementById('progress-dots');
+  container.innerHTML = '';
+  for (let i = 0; i < STEPS.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    if (i < currentStep) d.classList.add('done');
+    else if (i === currentStep) d.classList.add('current');
+    container.appendChild(d);
+  }
+}
+
+function typewriterEffect(text, elementId, callback) {
+  if (typewriterTimeout) clearTimeout(typewriterTimeout);
+  const el = document.getElementById(elementId);
+  const cursor = document.getElementById('cursor');
+  let i = 0;
+  el.innerHTML = '';
+  if (cursor) el.parentNode.appendChild(cursor);
+
+  function type() {
+    if (i < text.length) {
+      el.innerHTML = text.substring(0, i + 1);
+      if (el.parentNode && cursor) el.innerHTML += '';
+      if (i % 3 === 0) playBeep(800 + Math.random() * 200, 0.02, 0.03);
+      i++;
+      typewriterTimeout = setTimeout(type, 28);
+    } else {
+      if (cursor) cursor.style.display = 'inline-block';
+      if (callback) callback();
+    }
+  }
+  type();
+}
+
+function startGame() {
+  currentStep = 0;
+  startTimer();
+  showTransitPhase(0);
+}
+
+// 1. PHASE DE VOYAGE (En voiture)
+function showTransitPhase(stepIndex) {
+  showScreen('screen-riddle');
+  currentStep = stepIndex;
+  buildProgressDots();
+  
+  document.getElementById('step-badge').textContent = 'ÉTAPE ' + (stepIndex + 1) + '/8';
+  
+  // Afficher UI Transit, Cacher UI Action
+  document.getElementById('transit-container').classList.add('active');
+  document.getElementById('action-container').classList.remove('active');
+  
+  typewriterEffect(STEPS[stepIndex].transit, 'riddle-text');
+}
+
+// 2. PHASE D'ACTION (Sur place)
+function arriveAtLocation() {
+  getAudioCtx();
+  playBeep(600, 0.1, 0.05);
+  
+  // Cacher UI Transit, Afficher UI Action
+  document.getElementById('transit-container').classList.remove('active');
+  document.getElementById('action-container').classList.add('active');
+  
+  // Reset des champs
+  clickCount = 0;
+  document.getElementById('password-input').value = '';
+  document.getElementById('error-msg').classList.remove('visible');
+  document.getElementById('click-counter').textContent = '';
+  const btn = document.getElementById('validate-btn');
+  btn.textContent = VALIDATE_LABELS[0];
+  btn.className = 'btn btn-validate';
+
+  typewriterEffect(STEPS[currentStep].action, 'riddle-text');
+}
+
+function updateValidateBtn() {
+  const btn = document.getElementById('validate-btn');
+  const counter = document.getElementById('click-counter');
+  btn.textContent = VALIDATE_LABELS[clickCount];
+  btn.className = 'btn btn-validate';
+  if (clickCount === 1) { btn.classList.add('imran'); counter.textContent = '✓ Imran a validé ! (1/3)'; }
+  else if (clickCount === 2) { btn.classList.add('ismael'); counter.textContent = '✓ Imran ✓ Ismaël ont validé ! (2/3)'; }
+  else if (clickCount === 3) { btn.classList.add('zackari'); counter.textContent = '✓ Imran ✓ Ismaël, attend Zackari... (3/3)'; }
+  else { counter.textContent = ''; }
+}
+
+function handleValidate() {
+  getAudioCtx();
+  const input = document.getElementById('password-input').value;
+  if (!input.trim()) return;
+
+  clickCount++;
+  updateValidateBtn();
+
+  if (clickCount < 3) {
+    playBeep(440 + clickCount * 80, 0.08, 0.06);
+    return;
+  }
+
+  clickCount = 0;
+  const btn = document.getElementById('validate-btn');
+  btn.textContent = VALIDATE_LABELS[0];
+  btn.className = 'btn btn-validate';
+  document.getElementById('click-counter').textContent = '';
+
+  const expected = normalize(STEPS[currentStep].answer);
+  const given = normalize(input);
+
+  if (given === expected) {
+    playSuccess();
+    document.getElementById('error-msg').classList.remove('visible');
+    if (currentStep + 1 >= STEPS.length) {
+      setTimeout(() => showVictory(), 500);
+    } else {
+      setTimeout(() => showTransitPhase(currentStep + 1), 500);
+    }
+  } else {
+    playError();
+    const errEl = document.getElementById('error-msg');
+    document.getElementById('error-text').textContent = ERROR_MSGS[Math.floor(Math.random() * ERROR_MSGS.length)];
+    errEl.classList.add('visible');
+    document.getElementById('password-input').value = '';
+    document.getElementById('password-input').focus();
+    shakeInput();
+  }
+}
+
+function shakeInput() {
+  const inp = document.getElementById('password-input');
+  inp.style.transition = 'transform 0.05s';
+  const moves = ['-6px', '6px', '-5px', '5px', '-3px', '3px', '0'];
+  let i = 0;
+  function shake() {
+    if (i < moves.length) {
+      inp.style.transform = 'translateX(' + moves[i] + ')';
+      i++;
+      setTimeout(shake, 50);
+    } else {
+      inp.style.transform = '';
+    }
+  }
+  shake();
+}
+
+function handleEnter(e) {
+  if (e.key === 'Enter') handleValidate();
+}
+
+function showVictory() {
+  stopTimer();
+  document.getElementById('final-time').textContent = formatTime(timerSeconds);
+  document.getElementById('timer-bar').classList.remove('active');
+  showScreen('screen-victory');
+  playVictory();
+}
+</script>
+</body>
+</html>
